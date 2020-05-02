@@ -18,7 +18,7 @@ pub fn buildflags() {
 /// CARGO_PKG_NAME environment variable and the current directory.
 pub fn cdylib_path() -> String {
     let pkgname = std::env::var("CARGO_PKG_NAME").unwrap();
-    let libname = pkgname_to_libname(pkgname);
+    let libname = pkgname_to_libname(&pkgname);
     let profile = if cfg!(debug_assertions) {
         "debug"
     } else {
@@ -32,8 +32,8 @@ pub fn cdylib_path() -> String {
     )
 }
 
-fn pkgname_to_libname(name: String) -> String {
-    let libname = name.replace("-", "_");
+fn pkgname_to_libname(name: &str) -> String {
+    let libname = name.to_string().replace("-", "_");
     if cfg!(target_os = "windows") {
         format!("{}.dll", libname)
     } else if cfg!(target_os = "macos") {
@@ -41,4 +41,9 @@ fn pkgname_to_libname(name: String) -> String {
     } else {
         format!("lib{}.so", libname)
     }
+}
+
+#[test]
+fn test_pkgname_to_libname() {
+    assert_eq!("libtest_test.so", pkgname_to_libname("test-test"));
 }
