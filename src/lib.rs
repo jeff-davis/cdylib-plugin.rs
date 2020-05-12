@@ -8,7 +8,8 @@
 /// call from build.rs to emit build flags for building a plugin-style cdylib
 pub fn buildflags() {
     if cfg!(target_os = "macos") {
-        println!("cargo:rustc-cdylib-link-arg=-undefined dynamic_lookup");
+        println!("cargo:rustc-cdylib-link-arg=-undefined");
+        println!("cargo:rustc-cdylib-link-arg=dynamic_lookup");
     } else if cfg!(target_os = "windows") {
         println!("cargo:rustc-cdylib-link-arg=/FORCE");
     }
