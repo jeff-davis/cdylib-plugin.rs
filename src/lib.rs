@@ -1,9 +1,10 @@
-
 //! Provides workarounds for two problems encountered with ``cdylib``
 //! crates for plugin-style shared libraries, where the library refers
 //! to symbols in the host program:
 //! 1. Linking errors on some platforms due to undefined symbols
 //! 1. Difficulty finding the produced shared library for testing or installation
+
+use std::path::PathBuf;
 
 /// call from build.rs to emit build flags for building a plugin-style cdylib
 pub fn buildflags() {
@@ -17,20 +18,17 @@ pub fn buildflags() {
 
 /// return the absolute path of the generated cdylib, using the
 /// CARGO_PKG_NAME environment variable and the current directory.
-pub fn cdylib_path() -> String {
-    let pkgname = std::env::var("CARGO_PKG_NAME").unwrap();
-    let libname = pkgname_to_libname(&pkgname);
-    let profile = if cfg!(debug_assertions) {
-        "debug"
+pub fn cdylib_path() -> PathBuf {
+    let mut path = std::env::current_dir().unwrap();
+    path.push("target");
+    if cfg!(debug_assertions) {
+        path.push("debug");
     } else {
-        "release"
+        path.push("release");
     };
-    format!(
-        "{}/target/{}/{}",
-        std::env::current_dir().unwrap().to_str().unwrap(),
-        profile,
-        libname
-    )
+    let pkgname = std::env::var("CARGO_PKG_NAME").unwrap();
+    path.push(pkgname_to_libname(&pkgname));
+    return path;
 }
 
 fn pkgname_to_libname(name: &str) -> String {
@@ -44,7 +42,11 @@ fn pkgname_to_libname(name: &str) -> String {
     }
 }
 
+// This crate is not itself a cdylib, so it won't produce a C shared
+// library. However, we can test that the directory exists.
 #[test]
-fn test_pkgname_to_libname() {
-    assert_eq!("libtest_test.so", pkgname_to_libname("test-test"));
+fn cdylib_dir_exists() {
+    let mut path = cdylib_path();
+    path.pop();
+    assert!(std::fs::metadata(path).unwrap().is_dir());
 }
